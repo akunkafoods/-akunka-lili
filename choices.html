@@ -563,46 +563,21 @@ a:hover { text-decoration: underline; }
 <div id="myth-modal-backdrop" class="myth-modal-backdrop" style="display:none" onclick="closeMyth()"></div>
 <div id="myth-modal" class="myth-modal" style="display:none"></div>
 
-<!-- ==================== FLOWCHART SECTION ==================== -->
-<section class="section" id="flowchart-section">
+<!-- ==================== QUESTIONS SECTION ==================== -->
+<section class="section" id="questions-section">
   <div class="flowchart-header">
-    <h2>LILI Framework</h2>
-    <p class="tagline" id="fc-tagline"></p>
-    <div class="framing-pill" id="fc-framing"></div>
+    <h2>Your Choices</h2>
+    <p class="tagline">Every daily decision maps to a cellular consequence. Search or browse to explore.</p>
   </div>
 
   <!-- Search -->
   <div class="search-area">
     <div class="search-wrap">
       <span class="search-icon">&#x1F50D;</span>
-      <input type="text" class="search-input" id="search-input" placeholder="Search questions or framework nodes..." autocomplete="off">
+      <input type="text" class="search-input" id="search-input" placeholder="Search questions..." autocomplete="off">
       <div class="search-dropdown" id="search-dropdown"></div>
     </div>
     <button class="browse-btn" onclick="openBrowser()">Browse all questions</button>
-  </div>
-
-  <!-- Legend -->
-  <div class="legend">
-    <div class="legend-item"><span class="legend-dot red"></span> Pillars</div>
-    <div class="legend-item"><span class="legend-dot gold"></span> Hub</div>
-  </div>
-
-  <!-- Flow Grid -->
-  <div class="flow-grid" id="flow-grid">
-    <svg id="connection-svg" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="line-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="var(--red)" stop-opacity="0.5"/>
-          <stop offset="100%" stop-color="var(--gold)" stop-opacity="0.5"/>
-        </linearGradient>
-        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-          <polygon points="0 0, 8 3, 0 6" fill="var(--gold)" opacity="0.5"/>
-        </marker>
-      </defs>
-    </svg>
-    <div class="flow-column" id="pillars-col"></div>
-    <div class="flow-arrow-col" id="arrow-col"></div>
-    <div class="flow-column" id="hub-col"></div>
   </div>
 </section>
 
@@ -1281,9 +1256,7 @@ function esc(str) {
 document.addEventListener('DOMContentLoaded', () => {
   initOnboarding();
   renderMyths();
-  renderFlowchart();
   initSearch();
-  setTimeout(() => { drawConnections(); initConnectionObserver(); }, 500);
 });
 </script>
 </body>
