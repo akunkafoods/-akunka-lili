@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LILI Framework — How Your Body Ages | Akunka Foods</title>
+<meta name="description" content="Interactive visualization of how aging works at the cellular level. Explore how lifestyle choices shift your trajectory.">
+<meta property="og:title" content="Aging is a Biased Random Walk — LILI Framework">
+<meta property="og:description" content="Your body oscillates between damage and repair thousands of times. See how your choices reshape the curve.">
+<meta property="og:type" content="website">
+
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #060b14;
+    --card: #0d1520;
+    --card-hover: #111d2e;
+    --border: #1a2744;
+    --text: #e2e8f0;
+    --muted: #5a7394;
+    --accent: #f97316;
+    --accent-dim: rgba(249,115,22,0.12);
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.08);
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,0.08);
+    --cyan: #06b6d4;
+    --cyan-dim: rgba(6,182,212,0.06);
+    --yellow: #facc15;
+    --gold: #C9A96E;
+    --grid: #0f1f35;
+    --phase-growth: rgba(34,197,94,0.06);
+    --phase-plateau: rgba(6,182,212,0.06);
+    --phase-accel: rgba(249,115,22,0.06);
+    --phase-rapid: rgba(239,68,68,0.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  @media (max-height: 700px) {
+    .container { padding: 16px; }
+    .hero { margin-bottom: 20px !important; }
+    .hero h1 { font-size: 22px !important; }
+  }
+
+  .hero {
+    margin-bottom: 36px;
+    animation: fadeUp 0.8s ease-out;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .hero h1 {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--cyan);
+  }
+
+  .hero-explain {
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 640px;
+    margin-bottom: 10px;
+    line-height: 1.7;
+  }
+
+  .hero-explain strong { color: var(--text); font-weight: 500; }
+
+  .principle-box {
+    display: flex;
+    gap: 16px;
+    padding: 14px 18px;
+    background: var(--cyan-dim);
+    border-radius: 10px;
+    border: 1px solid rgba(6,182,212,0.15);
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .principle-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .principle-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .chart-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 12px 12px 4px;
+    margin-bottom: 18px;
+    overflow-x: auto;
+    animation: fadeUp 0.8s ease-out 0.15s both;
+  }
+
+  .legend-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 18px;
+    animation: fadeUp 0.8s ease-out 0.25s both;
+  }
+
+  .legend-items { display: flex; gap: 16px; flex-wrap: wrap; }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .toggle-group { display: flex; gap: 6px; }
+
+  .toggle-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 5px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+  }
+
+  .toggle-btn.active {
+    background: rgba(6,182,212,0.12);
+    border-color: var(--cyan);
+    color: var(--text);
+  }
+
+  .controls-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .controls-title {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 20px;
+    color: var(--text);
+  }
+
+  .controls-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .reset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .controls-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .controls-grid {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .controls-grid.four { grid-template-columns: repeat(4, 1fr); }
+
+  @media (max-width: 640px) {
+    .controls-grid.four { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .slider-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    transition: border-color 0.2s;
+  }
+
+  .slider-card:hover { border-color: var(--accent); }
+
+  .slider-label {
+    font-size: 12px;
+    color: var(--text);
+    margin-bottom: 2px;
+    font-weight: 500;
+  }
+
+  .slider-hint {
+    font-size: 9px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .slider-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .slider-range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 8px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .phase-legend {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  @media (max-width: 640px) {
+    .phase-legend { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .phase-card {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .phase-card-title {
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  .phase-card-ages {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+
+  .phase-card-desc {
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  .insight-box {
+    padding: 16px 20px;
+    background: var(--accent-dim);
+    border-radius: 10px;
+    border: 1px solid rgba(249,115,22,0.2);
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+
+  .insight-box strong { color: var(--accent); }
+  .insight-box .yw { color: var(--yellow); }
+  .insight-box .ac { color: var(--accent); }
+  .insight-box .cy { color: var(--cyan); }
+
+  .cta-section {
+    text-align: center;
+    padding: 32px 24px;
+    background: linear-gradient(180deg, transparent 0%, rgba(249,115,22,0.04) 100%);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .cta-section h3 {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 22px;
+    font-weight: 400;
+    margin-bottom: 10px;
+  }
+
+  .cta-section p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 20px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(249,115,22,0.3);
+  }
+
+  .tooltip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.7;
+    pointer-events: none;
+  }
+
+  .footer-note {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .footer-note a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="app-root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useMemo, useCallback, useEffect } = React;
+
+const PI4 = Math.PI / 4;
+
+// Default parameter values
+const DEFAULTS = {
+  D0: 1, lambdaU: 0.045, lambdaL: 0.025, omega0: 9,
+  kappa: 0.030, alphaMax: 0.600, beta: 0.050, maxAge: 90
+};
+
+// Phase definitions
+const PHASES = [
+  { name: "GROWTH", range: [0, 25], color: "var(--green)", bg: "var(--phase-growth)",
+    subtitle: "Repair > Damage", desc: "Your body repairs faster than it accumulates damage. Dense recovery cycles. Resilience is at its peak." },
+  { name: "PLATEAU", range: [25, 40], color: "var(--cyan)", bg: "var(--phase-plateau)",
+    subtitle: "Peak capacity", desc: "Damage and repair are roughly balanced. You feel invincible — but the bias is quietly shifting." },
+  { name: "ACCELERATING", range: [40, 65], color: "var(--accent)", bg: "var(--phase-accel)",
+    subtitle: "Feedback loops emerge", desc: "Damage starts outpacing repair. Recovery takes longer. Small lifestyle changes have outsized impact here." },
+  { name: "RAPID", range: [65, 120], color: "var(--red)", bg: "var(--phase-rapid)",
+    subtitle: "Repair overwhelmed", desc: "Recovery capacity declining. But even here, the optimized curve shows: it's never too late to flatten the slope." },
+];
+
+function generateData({ D0, lambdaU, lambdaL, omega0, kappa, alphaMax, beta, maxAge }) {
+  const data = [];
+  const step = 0.05;
+  for (let t = 0; t <= maxAge; t += step) {
+    const U = D0 * Math.exp(lambdaU * t);
+    const L = D0 * Math.exp(lambdaL * t);
+    const M = (U + L) / 2;
+    const A = (U - L) / 2;
+    const omegaT = omega0 * Math.exp(-kappa * t);
+    const phi = (omega0 / kappa) * (1 - Math.exp(-kappa * t));
+    const alpha = alphaMax * (1 - Math.exp(-beta * t));
+    const g = Math.sin(phi + alpha * Math.sin(phi + PI4));
+    const D = M + A * g;
+    data.push({ age: parseFloat(t.toFixed(3)), upper: U, lower: L, midline: M, damage: D, omegaT, alpha: parseFloat(alpha.toFixed(3)) });
+  }
+  return data;
+}
+
+function Chart({ data, width, height, showMidline, showFill, showEnvelopes, maxAge }) {
+  const margin = { top: 20, right: 30, bottom: 50, left: 65 };
+  const w = width - margin.left - margin.right;
+  const h = height - margin.top - margin.bottom;
+  const xMax = data[data.length - 1]?.age || 100;
+  const yMax = Math.max(...data.map(d => d.upper)) * 1.05;
+
+  const sx = useCallback((v) => margin.left + v / xMax * w, [w, xMax]);
+  const sy = useCallback((v) => margin.top + h - v / yMax * h, [h, yMax]);
+
+  const toPath = useCallback((arr, key) => arr.map((d, i) => `${i === 0 ? "M" : "L"}${sx(d.age).toFixed(1)},${sy(d[key]).toFixed(1)}`).join(" "), [sx, sy]);
+
+  const subsample = (arr, n) => arr.filter((_, i) => i % n === 0 || i === arr.length - 1);
+  const envelopeSub = useMemo(() => subsample(data, 4), [data]);
+
+  const damagePath = useMemo(() => toPath(data, "damage"), [data, toPath]);
+  const upperPath = useMemo(() => toPath(envelopeSub, "upper"), [envelopeSub, toPath]);
+  const lowerPath = useMemo(() => toPath(envelopeSub, "lower"), [envelopeSub, toPath]);
+  const midlinePath = useMemo(() => toPath(envelopeSub, "midline"), [envelopeSub, toPath]);
+
+  const envelopeFill = useMemo(() => {
+    const upper = envelopeSub.map(d => `${sx(d.age).toFixed(1)},${sy(d.upper).toFixed(1)}`);
+    const lower = [...envelopeSub].reverse().map(d => `${sx(d.age).toFixed(1)},${sy(d.lower).toFixed(1)}`);
+    return `M${upper.join(" L")} L${lower.join(" L")} Z`;
+  }, [envelopeSub, sx, sy]);
+
+  const xTicks = [];
+  for (let t = 0; t <= xMax; t += 10) xTicks.push(t);
+  const yTicks = useMemo(() => {
+    const ticks = [];
+    let step = Math.pow(10, Math.floor(Math.log10(yMax || 1))) / 2 || 1;
+    if (yMax / step > 10) step *= 2;
+    if (yMax / step > 10) step *= 2.5;
+    for (let v = 0; v <= yMax; v += step) ticks.push(parseFloat(v.toFixed(2)));
+    return ticks;
+  }, [yMax]);
+
+  const [hover, setHover] = useState(null);
+
+  const handleMouseMove = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const age = (mx - margin.left) / w * xMax;
+    const idx = Math.round(age / 0.05);
+    if (idx >= 0 && idx < data.length) setHover(data[idx]);
+  }, [data, w, xMax]);
+
+  const handleTouchMove = useCallback((e) => {
+    const touch = e.touches[0];
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mx = touch.clientX - rect.left;
+    const age = (mx - margin.left) / w * xMax;
+    const idx = Math.round(age / 0.05);
+    if (idx >= 0 && idx < data.length) setHover(data[idx]);
+  }, [data, w, xMax]);
+
+  // Determine phase for a given age
+  const getPhase = (age) => {
+    for (const p of PHASES) {
+      if (age >= p.range[0] && age < p.range[1]) return p;
+    }
+    return PHASES[PHASES.length - 1];
+  };
+
+  // Determine hover status
+  const getStatus = (d) => {
+    if (!d) return "";
+    const mid = (d.upper + d.lower) / 2;
+    if (d.damage < mid) return "Repair-favorable";
+    return "Strain-accumulating";
+  };
+
+  return (
+    <svg width={width} height={height} style={{ display: "block", maxWidth: "100%" }}
+      onMouseMove={handleMouseMove} onMouseLeave={() => setHover(null)}
+      onTouchMove={handleTouchMove} onTouchEnd={() => setHover(null)}>
+
+      {/* Phase background bands */}
+      {PHASES.map(p => {
+        const x1 = Math.max(sx(p.range[0]), margin.left);
+        const x2 = Math.min(sx(Math.min(p.range[1], xMax)), margin.left + w);
+        if (x2 <= x1) return null;
+        return (
+          <g key={p.name}>
+            <rect x={x1} y={margin.top} width={x2 - x1} height={h} fill={p.bg} />
+            <text x={(x1 + x2) / 2} y={margin.top + 14} fill={p.color} fontSize={10} textAnchor="middle"
+              fontFamily="'DM Sans', sans-serif" fontWeight={600} letterSpacing="1" opacity={0.8}>
+              {p.name}
+            </text>
+            <text x={(x1 + x2) / 2} y={margin.top + h + 34} fill={p.color} fontSize={9} textAnchor="middle"
+              fontFamily="'DM Sans', sans-serif" opacity={0.6}>
+              {p.subtitle}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Grid */}
+      {xTicks.map(t => (
+        <g key={`x${t}`}>
+          <line x1={sx(t)} x2={sx(t)} y1={margin.top} y2={margin.top + h} stroke="var(--grid)" strokeDasharray="3,3" />
+          <text x={sx(t)} y={margin.top + h + 18} fill="var(--muted)" fontSize={10} textAnchor="middle" fontFamily="'JetBrains Mono', monospace">{t}</text>
+        </g>
+      ))}
+      {yTicks.map(v => (
+        <g key={`y${v}`}>
+          <line x1={margin.left} x2={margin.left + w} y1={sy(v)} y2={sy(v)} stroke="var(--grid)" strokeDasharray="3,3" />
+          <text x={margin.left - 8} y={sy(v) + 4} fill="var(--muted)" fontSize={10} textAnchor="end" fontFamily="'JetBrains Mono', monospace">{v > 100 ? v.toFixed(0) : v.toFixed(1)}</text>
+        </g>
+      ))}
+
+      <text x={margin.left + w / 2} y={height - 4} fill="var(--muted)" fontSize={12} textAnchor="middle" fontFamily="'DM Sans', sans-serif">Age (years)</text>
+      <text x={16} y={margin.top + h / 2} fill="var(--muted)" fontSize={12} textAnchor="middle" fontFamily="'DM Sans', sans-serif" transform={`rotate(-90, 16, ${margin.top + h / 2})`}>Cumulative Cellular Wear</text>
+
+      {/* Phase divider lines */}
+      {PHASES.slice(1).map(p => {
+        const x = sx(p.range[0]);
+        if (x < margin.left || x > margin.left + w) return null;
+        return <line key={`div-${p.name}`} x1={x} x2={x} y1={margin.top} y2={margin.top + h} stroke={p.color} strokeWidth={0.5} strokeDasharray="6,4" opacity={0.3} />;
+      })}
+
+      {showFill && <path d={envelopeFill} fill="var(--cyan-dim)" />}
+      {showEnvelopes && <path d={upperPath} fill="none" stroke="var(--red)" strokeWidth={1.5} strokeDasharray="8,4" opacity={0.6} />}
+      {showEnvelopes && <path d={lowerPath} fill="none" stroke="var(--green)" strokeWidth={1.5} strokeDasharray="8,4" opacity={0.6} />}
+      {showMidline && <path d={midlinePath} fill="none" stroke="var(--yellow)" strokeWidth={1} strokeDasharray="4,4" opacity={0.35} />}
+
+      <path d={damagePath} fill="none" stroke="var(--cyan)" strokeWidth={1.8} strokeLinejoin="round" />
+      <circle cx={sx(0)} cy={sy(data[0]?.damage || 1)} r={4} fill="var(--accent)" />
+
+      {showEnvelopes && data.length > 0 && (
+        <>
+          <text x={sx(xMax) + 4} y={sy(data[data.length - 1]?.upper) - 4} fill="var(--red)" fontSize={9} fontFamily="'DM Sans', sans-serif" opacity={0.8}>Damage ceiling</text>
+          <text x={sx(xMax) + 4} y={sy(data[data.length - 1]?.lower) + 12} fill="var(--green)" fontSize={9} fontFamily="'DM Sans', sans-serif" opacity={0.8}>Repair floor</text>
+        </>
+      )}
+
+      {/* Hover tooltip */}
+      {hover && (
+        <>
+          <line x1={sx(hover.age)} x2={sx(hover.age)} y1={margin.top} y2={margin.top + h} stroke="var(--muted)" strokeWidth={0.5} strokeDasharray="2,2" />
+          <circle cx={sx(hover.age)} cy={sy(hover.damage)} r={3.5} fill="var(--cyan)" stroke="var(--bg)" strokeWidth={2} />
+          {showEnvelopes && <circle cx={sx(hover.age)} cy={sy(hover.upper)} r={3} fill="var(--red)" opacity={0.7} />}
+          {showEnvelopes && <circle cx={sx(hover.age)} cy={sy(hover.lower)} r={3} fill="var(--green)" opacity={0.7} />}
+
+          <foreignObject x={Math.min(sx(hover.age) + 14, width - 210)} y={Math.max(sy(hover.damage) - 115, margin.top)} width={200} height={130}>
+            <div className="tooltip">
+              <div style={{ color: "var(--muted)", marginBottom: 2 }}>Age {hover.age.toFixed(1)} years · <span style={{ fontWeight: 600 }}>{getPhase(hover.age).name}</span></div>
+              <div style={{ color: getStatus(hover) === "Repair-favorable" ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 12, margin: "4px 0" }}>
+                {getStatus(hover) === "Repair-favorable" ? "↓ Repair-favorable" : "↑ Strain-accumulating"}
+              </div>
+              <div style={{ fontSize: 10, color: "var(--muted)" }}>
+                Cellular wear: <span style={{ color: "var(--cyan)" }}>{hover.damage.toFixed(2)}</span>
+              </div>
+              <div style={{ fontSize: 10, color: "var(--muted)" }}>
+                Recovery speed: <span style={{ color: "var(--yellow)" }}>{hover.omegaT.toFixed(1)} cycles/yr</span>
+              </div>
+              <div style={{ fontSize: 10, color: "var(--muted)" }}>
+                Damage bias: <span style={{ color: "var(--accent)" }}>{(hover.alpha * 100).toFixed(0)}%</span>
+              </div>
+            </div>
+          </foreignObject>
+        </>
+      )}
+    </svg>
+  );
+}
+
+function Slider({ label, hint, value, set, min, max, step, unit, leftLabel, rightLabel }) {
+  return (
+    <div className="slider-card">
+      <div className="slider-label">{label}</div>
+      {hint && <div className="slider-hint">{hint}</div>}
+      <div className="slider-value">{typeof value === "number" ? (value % 1 === 0 ? value : value.toFixed(3)) : value}{unit || ""}</div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e => set(parseFloat(e.target.value))} />
+      {leftLabel && rightLabel && (
+        <div className="slider-range-labels">
+          <span>{leftLabel}</span>
+          <span>{rightLabel}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App() {
+  const [D0, setD0] = useState(DEFAULTS.D0);
+  const [lambdaU, setLambdaU] = useState(DEFAULTS.lambdaU);
+  const [lambdaL, setLambdaL] = useState(DEFAULTS.lambdaL);
+  const [omega0, setOmega0] = useState(DEFAULTS.omega0);
+  const [kappa, setKappa] = useState(DEFAULTS.kappa);
+  const [alphaMax, setAlphaMax] = useState(DEFAULTS.alphaMax);
+  const [beta, setBeta] = useState(DEFAULTS.beta);
+  const [maxAge, setMaxAge] = useState(DEFAULTS.maxAge);
+  const [showMidline, setShowMidline] = useState(false);
+  const [showFill, setShowFill] = useState(true);
+  const [showEnvelopes, setShowEnvelopes] = useState(true);
+
+  const resetDefaults = () => {
+    setD0(DEFAULTS.D0); setLambdaU(DEFAULTS.lambdaU); setLambdaL(DEFAULTS.lambdaL);
+    setOmega0(DEFAULTS.omega0); setKappa(DEFAULTS.kappa); setAlphaMax(DEFAULTS.alphaMax);
+    setBeta(DEFAULTS.beta); setMaxAge(DEFAULTS.maxAge);
+  };
+
+  const [chartWidth, setChartWidth] = useState(880);
+  useEffect(() => {
+    const update = () => setChartWidth(Math.min(880, window.innerWidth - 56));
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const data = useMemo(
+    () => generateData({ D0, lambdaU, lambdaL, omega0, kappa, alphaMax, beta, maxAge }),
+    [D0, lambdaU, lambdaL, omega0, kappa, alphaMax, beta, maxAge]
+  );
+
+  const [isEmbed, setIsEmbed] = useState(false);
+  useEffect(() => { setIsEmbed(window.self !== window.top); }, []);
+
+  return (
+    <>
+      {/* Hero */}
+      <div className="hero">
+        <div className="badge">LILI Framework · Akunka Foods</div>
+        <h1>Your body doesn't age smoothly.<br/>It <em>oscillates</em> between damage and repair.</h1>
+        <p className="hero-explain">
+          Every day, your cells cycle between accumulating damage and repairing it. In youth, repair wins most rounds. With age, <strong>damage starts winning more often</strong> — and recoveries take longer. This curve shows that trajectory — and how your choices reshape it.
+        </p>
+        <div className="principle-box">
+          <div className="principle-item">
+            <div className="principle-dot" style={{ background: "var(--cyan)" }}></div>
+            <span style={{ color: "var(--muted)", fontSize: 12 }}>The wiggly line = your daily damage-repair oscillation</span>
+          </div>
+          <div className="principle-item">
+            <div className="principle-dot" style={{ background: "var(--red)" }}></div>
+            <span style={{ color: "var(--muted)", fontSize: 12 }}>Upper boundary = worst-case trajectory</span>
+          </div>
+          <div className="principle-item">
+            <div className="principle-dot" style={{ background: "var(--green)" }}></div>
+            <span style={{ color: "var(--muted)", fontSize: 12 }}>Lower boundary = best-case trajectory</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="chart-wrap">
+        <Chart data={data} width={chartWidth} height={440}
+          showMidline={showMidline} showFill={showFill} showEnvelopes={showEnvelopes} maxAge={maxAge} />
+      </div>
+
+      {/* Phase Legend Cards */}
+      <div className="phase-legend">
+        {PHASES.map(p => (
+          <div key={p.name} className="phase-card" style={{ background: p.bg, borderColor: `${p.color}33` }}>
+            <div className="phase-card-title" style={{ color: p.color }}>{p.name}</div>
+            <div className="phase-card-ages" style={{ color: p.color }}>Age {p.range[0]}–{p.range[1] > 100 ? "end" : p.range[1]}</div>
+            <div className="phase-card-desc">{p.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Legend + Toggles */}
+      <div className="legend-bar">
+        <div className="legend-items">
+          {[
+            { color: "var(--cyan)", label: "Your trajectory" },
+            { color: "var(--red)", label: "Damage ceiling", dash: true },
+            { color: "var(--green)", label: "Repair floor", dash: true },
+          ].map(({ color, label, dash }) => (
+            <div key={label} className="legend-item">
+              <svg width={20} height={2}><line x1={0} y1={1} x2={20} y2={1} stroke={color} strokeWidth={2} strokeDasharray={dash ? "4,3" : undefined} /></svg>
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="toggle-group">
+          {[
+            { label: "Boundaries", val: showEnvelopes, set: setShowEnvelopes },
+            { label: "Fill", val: showFill, set: setShowFill },
+            { label: "Midline", val: showMidline, set: setShowMidline },
+          ].map(({ label, val, set }) => (
+            <button key={label} className={`toggle-btn ${val ? "active" : ""}`} onClick={() => set(p => !p)}>{label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Interactive Controls */}
+      <div className="controls-header">
+        <div className="controls-title">What shifts your trajectory?</div>
+        <button className="reset-btn" onClick={resetDefaults}>↺ Reset to defaults</button>
+      </div>
+      <div className="controls-subtitle">Move the sliders to see how lifestyle choices reshape your aging curve.</div>
+
+      <div className="controls-label">Your Body's Baseline</div>
+      <div className="controls-grid four">
+        <Slider label="Starting health debt" hint="Genetics, early life conditions"
+          value={D0} set={setD0} min={0.1} max={5} step={0.1}
+          leftLabel="Clean start" rightLabel="More inherited risk" />
+        <Slider label="Daily damage pace" hint="Junk food, stress, poor sleep push this up"
+          value={lambdaU} set={(v) => setLambdaU(Math.max(v, lambdaL + 0.005))} min={0.02} max={0.10} step={0.005}
+          leftLabel="Clean lifestyle" rightLabel="High damage" />
+        <Slider label="Repair strength" hint="Exercise, fasting, good sleep push this up"
+          value={lambdaL} set={(v) => setLambdaL(Math.min(v, lambdaU - 0.005))} min={0.005} max={0.06} step={0.005}
+          leftLabel="Weak repair" rightLabel="Strong repair" />
+        <Slider label="Timeline" hint="How far to project"
+          value={maxAge} set={setMaxAge} min={60} max={120} step={5} unit=" years"
+          leftLabel="60y" rightLabel="120y" />
+      </div>
+
+      <div className="controls-label">Recovery & Resilience</div>
+      <div className="controls-grid four">
+        <Slider label="Recovery bounce in youth" hint="How quickly you bounced back in your 20s"
+          value={omega0} set={setOmega0} min={2} max={16} step={0.5} unit=" cycles/yr"
+          leftLabel="Slow recovery" rightLabel="Fast bounce-back" />
+        <Slider label="Recovery slowdown with age" hint="How fast bounce-back ability fades"
+          value={kappa} set={setKappa} min={0.01} max={0.06} step={0.005}
+          leftLabel="Stays strong" rightLabel="Fades quickly" />
+        <Slider label="Damage-repair asymmetry" hint="How much harder it is to repair vs accumulate damage"
+          value={alphaMax} set={setAlphaMax} min={0} max={0.95} step={0.05}
+          leftLabel="Balanced" rightLabel="Highly asymmetric" />
+        <Slider label="Asymmetry acceleration" hint="How fast the imbalance worsens with age"
+          value={beta} set={setBeta} min={0.01} max={0.08} step={0.005}
+          leftLabel="Gradual" rightLabel="Rapid worsening" />
+      </div>
+
+      {/* Insight */}
+      <div className="insight-box">
+        <strong>What does this mean for you?</strong><br/>
+        Your body doesn't age in a straight line — it cycles between damage and repair thousands of times. With age, two things happen: <span className="yw">recovery cycles slow down</span> and <span className="ac">you enter damage states faster than you can recover</span>. LILI's three pillars — <span className="cy">Food, Activity, and Recovery</span> — fight both effects by maintaining the cellular machinery that keeps repair cycling fast and efficient.
+        <br/><br/>
+        <span style={{ color: "var(--muted)", fontSize: 12 }}>You can't make the lifetime curve go to zero — that would be immortality. But you can make today's dip deeper, this week's average flatter, and this decade's slope gentler.</span>
+      </div>
+
+      {/* CTA */}
+      {!isEmbed && (
+        <div className="cta-section">
+          <h3>Want to shift your curve?</h3>
+          <p>LILI analyses your daily habits across food, activity, and recovery to show you exactly where your damage-repair balance stands — and how to improve it.</p>
+          <a className="cta-btn" href="./choices.html">
+            Explore Your Choices →
+          </a>
+        </div>
+      )}
+
+      <div className="footer-note">
+        Built on first-principles cellular biology · <a href="https://akunkafoods.com" target="_blank" rel="noopener">Akunka Foods</a> · LILI Framework
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("app-root")).render(<App />);
+</script>
+
+</body>
+</html>
